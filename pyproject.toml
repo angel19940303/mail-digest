@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "email-analyzer"
+version = "0.1.0"
+description = "Fetch Gmail emails, analyze with AI CLI, and post reports to Slack"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "google-api-python-client>=2.100.0",
+    "google-auth-oauthlib>=1.2.0",
+    "httpx>=0.27.0",
+    "pyyaml>=6.0",
+    "python-dotenv>=1.0.0",
+    "beautifulsoup4>=4.12.0",
+    "html2text>=2024.2.26",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.4.0"]
+
+[project.scripts]
+email-analyzer = "email_analyzer.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

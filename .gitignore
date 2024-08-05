@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+
+# Secrets & credentials
+.env
+credentials.json
+token.json
+
+# Data
+emails/
+daily_reports/
+weekly_reports/
+monthly_report/
+logs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
