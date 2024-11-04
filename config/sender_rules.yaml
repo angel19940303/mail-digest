@@ -1,0 +1,11 @@
+# Rule-based classification. Unmatched messages are classified as "other".
+
+newsletter:
+  patterns:
+    - from_contains: alphasignal
+      subject_prefix: TLDR
+
+community:
+  domains:
+    - list.boost.org
+  addresses: []
