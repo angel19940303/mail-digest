@@ -9,7 +9,12 @@ from datetime import date
 from email_analyzer.classify.hybrid import classify_messages
 from email_analyzer.config import AppConfig, load_config
 from email_analyzer.gmail.fetch import fetch_messages_in_window
-from email_analyzer.reports.generator import generate_daily_report
+from email_analyzer.reports.generator import (
+    generate_daily_report,
+    generate_monthly_report,
+    generate_weekly_report,
+    is_last_day_of_month,
+)
 from email_analyzer.slack.webhook import WebhookNotifier, summary_from_markdown
 from email_analyzer.storage.emails import save_messages
 from email_analyzer.storage.paths import compute_window, report_date_parts
@@ -51,6 +56,14 @@ def run_job(
         summary = summary_from_markdown(content, yyyymmdd, report_path, config)
         notifier.send_daily(summary)
         logger.info("Daily report saved: %s", report_path)
+        if rd.weekday() == 6:  # Sunday
+            _, weekly_path = generate_weekly_report(config, rd)
+            logger.info("Weekly report saved: %s", weekly_path)
+
+        if is_last_day_of_month(rd):
+            _, monthly_path = generate_monthly_report(config, rd)
+            logger.info("Monthly report saved: %s", monthly_path)
+
         return 0
     except Exception:
         logger.exception("Job failed")

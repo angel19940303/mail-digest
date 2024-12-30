@@ -1,14 +1,20 @@
-"""Generate daily reports."""
+"""Generate daily, weekly, and monthly reports."""
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from email_analyzer.config import AppConfig
 from email_analyzer.gmail.fetch import EmailMessage
 from email_analyzer.reports.ai_cli import prompt_file_for_mode, run_prompt
-from email_analyzer.storage.paths import daily_report_path, report_date_parts
+from email_analyzer.storage.paths import (
+    daily_report_path,
+    iso_week_label,
+    monthly_report_path,
+    report_date_parts,
+    weekly_report_path,
+)
 
 NO_EMAILS_REPORT = """# Daily Email Report — {date}
 
@@ -19,16 +25,30 @@ NO_EMAILS_REPORT = """# Daily Email Report — {date}
 ### New tools
 _None_
 
+### Improvements / trends
+_None_
+
 ## Community
 
 ### Highlights
 _No community emails in this window._
 
+### Notable threads / announcements
+_None_
+
 ## Other
 
 ### Summary
 No emails were received in this reporting window.
+
+### Notable emails
+_None_
+
+### Action items
+_None_
 """
+
+
 
 
 def _format_email_block(msg: EmailMessage, max_body: int) -> str:
@@ -73,6 +93,8 @@ def build_daily_input(config: AppConfig, messages: list[EmailMessage], report_da
     return "\n".join(lines)
 
 
+
+
 def _check_ai_output(stdout: str | None, stderr: str | None, code: int, label: str) -> str:
     out = stdout or ""
     if code != 0 or not out.strip():
@@ -109,3 +131,90 @@ def generate_daily_report(
         content = f"# Daily Email Report — {yyyymmdd}\n\n{content}"
     out_path.write_text(content, encoding="utf-8")
     return content, out_path
+
+
+def _load_daily_reports_in_range(
+    config: AppConfig,
+    start: date,
+    end: date,
+) -> list[tuple[date, str]]:
+    reports: list[tuple[date, str]] = []
+    current = start
+    while current <= end:
+        path = daily_report_path(config, current)
+        if path.exists():
+            reports.append((current, path.read_text(encoding="utf-8")))
+        current += timedelta(days=1)
+    return reports
+
+
+def _week_range_for_sunday(sunday: date) -> tuple[date, date]:
+    """Monday through Sunday for the week ending on given Sunday."""
+    monday = sunday - timedelta(days=6)
+    return monday, sunday
+
+
+def generate_weekly_report(config: AppConfig, week_end: date) -> tuple[str, Path]:
+    monday, sunday = _week_range_for_sunday(week_end)
+    reports = _load_daily_reports_in_range(config, monday, sunday)
+    label = iso_week_label(week_end)
+    out_path = weekly_report_path(config, week_end)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if not reports:
+        content = f"# Weekly Email Report — {label}\n\nNo daily reports available for this week."
+        out_path.write_text(content, encoding="utf-8")
+        return content, out_path
+
+    user_input = f"Week: {label}\n\n" + "\n\n---\n\n".join(
+        f"## Daily report {d.isoformat()}\n{text}" for d, text in reports
+    )
+    stdout, stderr, code = run_prompt(
+        config,
+        user_input,
+        system_prompt_file=prompt_file_for_mode(config, "weekly"),
+        mode="weekly",
+    )
+    if code != 0 or not (stdout or "").strip():
+        raise RuntimeError(f"Weekly report generation failed (exit {code}): {stderr or 'no output'}")
+
+    content = stdout.strip()
+    if not content.startswith("#"):
+        content = f"# Weekly Email Report — {label}\n\n{content}"
+    out_path.write_text(content, encoding="utf-8")
+    return content, out_path
+
+
+def generate_monthly_report(config: AppConfig, month_end: date) -> tuple[str, Path]:
+    first = month_end.replace(day=1)
+    reports = _load_daily_reports_in_range(config, first, month_end)
+    yyyymm = f"{month_end.year:04d}-{month_end.month:02d}"
+    out_path = monthly_report_path(config, month_end)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if not reports:
+        content = f"# Monthly Email Report — {yyyymm}\n\nNo daily reports available for this month."
+        out_path.write_text(content, encoding="utf-8")
+        return content, out_path
+
+    user_input = f"Month: {yyyymm}\n\n" + "\n\n---\n\n".join(
+        f"## Daily report {d.isoformat()}\n{text}" for d, text in reports
+    )
+    stdout, stderr, code = run_prompt(
+        config,
+        user_input,
+        system_prompt_file=prompt_file_for_mode(config, "monthly"),
+        mode="monthly",
+    )
+    if code != 0 or not (stdout or "").strip():
+        raise RuntimeError(f"Monthly report generation failed (exit {code}): {stderr or 'no output'}")
+
+    content = stdout.strip()
+    if not content.startswith("#"):
+        content = f"# Monthly Email Report — {yyyymm}\n\n{content}"
+    out_path.write_text(content, encoding="utf-8")
+    return content, out_path
+
+
+def is_last_day_of_month(d: date) -> bool:
+    return (d + timedelta(days=1)).month != d.month
