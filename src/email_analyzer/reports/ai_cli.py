@@ -34,9 +34,34 @@ def _run_subprocess(cmd: list[str], **kwargs) -> subprocess.CompletedProcess[str
 
 
 def claude_subprocess_env(config: AppConfig) -> dict[str, str]:
-    """Return subprocess environment for Claude Code CLI."""
-    return os.environ.copy()
+    """Build environment for Claude Code CLI, optionally routing via OpenRouter."""
+    env = os.environ.copy()
+    or_cfg = config.ai.openrouter
+    if not or_cfg.enabled:
+        return env
 
+    api_key = or_cfg.api_key or os.environ.get("OPENROUTER_API_KEY")
+    if not api_key:
+        raise RuntimeError(
+            "OpenRouter is enabled but OPENROUTER_API_KEY is not set. Add it to .env"
+        )
+
+    env["ANTHROPIC_BASE_URL"] = or_cfg.base_url
+    env["ANTHROPIC_AUTH_TOKEN"] = api_key
+    env["ANTHROPIC_API_KEY"] = ""
+    if or_cfg.disable_nonessential_traffic:
+        env["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1"
+
+    sonnet = or_cfg.default_sonnet_model or or_cfg.model
+    opus = or_cfg.default_opus_model or or_cfg.model
+    haiku = or_cfg.default_haiku_model or or_cfg.model
+    if sonnet:
+        env["ANTHROPIC_DEFAULT_SONNET_MODEL"] = sonnet
+    if opus:
+        env["ANTHROPIC_DEFAULT_OPUS_MODEL"] = opus
+    if haiku:
+        env["ANTHROPIC_DEFAULT_HAIKU_MODEL"] = haiku
+    return env
 
 
 def run_prompt(
