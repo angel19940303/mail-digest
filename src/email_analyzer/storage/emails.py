@@ -85,6 +85,31 @@ def save_messages(
     return saved
 
 
+def load_messages_for_date(config: AppConfig, report_date: date) -> list[EmailMessage]:
+    dest = emails_dir(config, report_date)
+    if not dest.exists():
+        return []
+
+    messages: list[EmailMessage] = []
+    for meta_file in sorted(dest.glob("*.meta.json")):
+        data = json.loads(meta_file.read_text(encoding="utf-8"))
+        messages.append(
+            EmailMessage(
+                message_id=data["message_id"],
+                thread_id=data.get("thread_id", ""),
+                internal_date_ms=data["internal_date_ms"],
+                from_addr=data.get("from_addr", ""),
+                from_email=data.get("from_email", ""),
+                subject=data.get("subject", ""),
+                date_header=data.get("date_header", ""),
+                snippet=data.get("snippet", ""),
+                labels=data.get("labels", []),
+                body_text=data.get("body_text", ""),
+                category=data.get("category"),
+            )
+        )
+    return messages
+
 
 def update_message_category(
     config: AppConfig,
