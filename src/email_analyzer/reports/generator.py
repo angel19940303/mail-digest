@@ -95,6 +95,19 @@ def build_daily_input(config: AppConfig, messages: list[EmailMessage], report_da
 
 
 
+
+
+def _strip_fences(text: str) -> str:
+    t = text.strip()
+    if t.startswith("```"):
+        lines = t.splitlines()
+        if lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        return "\n".join(lines).strip()
+    return t
+
 def _check_ai_output(stdout: str | None, stderr: str | None, code: int, label: str) -> str:
     out = stdout or ""
     if code != 0 or not out.strip():
@@ -126,7 +139,7 @@ def generate_daily_report(
     )
     stdout = _check_ai_output(stdout, stderr, code, "Daily report generation")
 
-    content = stdout.strip()
+    content = _strip_fences(stdout)
     if not content.startswith("#"):
         content = f"# Daily Email Report — {yyyymmdd}\n\n{content}"
     out_path.write_text(content, encoding="utf-8")
@@ -178,7 +191,7 @@ def generate_weekly_report(config: AppConfig, week_end: date) -> tuple[str, Path
     if code != 0 or not (stdout or "").strip():
         raise RuntimeError(f"Weekly report generation failed (exit {code}): {stderr or 'no output'}")
 
-    content = stdout.strip()
+    content = _strip_fences(stdout)
     if not content.startswith("#"):
         content = f"# Weekly Email Report — {label}\n\n{content}"
     out_path.write_text(content, encoding="utf-8")
@@ -209,7 +222,7 @@ def generate_monthly_report(config: AppConfig, month_end: date) -> tuple[str, Pa
     if code != 0 or not (stdout or "").strip():
         raise RuntimeError(f"Monthly report generation failed (exit {code}): {stderr or 'no output'}")
 
-    content = stdout.strip()
+    content = _strip_fences(stdout)
     if not content.startswith("#"):
         content = f"# Monthly Email Report — {yyyymm}\n\n{content}"
     out_path.write_text(content, encoding="utf-8")
