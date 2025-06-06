@@ -51,8 +51,18 @@ _None_
 
 
 
+
+
+def _truncate_body(text: str, max_chars: int) -> str:
+    if len(text) <= max_chars:
+        return text
+    return text[: max_chars - 3] + "..."
+
 def _format_email_block(msg: EmailMessage, max_body: int) -> str:
-    body = msg.body_text or msg.snippet or ""
+    raw = msg.body_text or msg.snippet or ""
+    truncated = len(raw) > max_body
+    body = _truncate_body(raw, max_body)
+    trunc_note = " (body truncated)" if truncated else ""
     return (
         f"---\n"
         f"Category: {msg.category or 'unknown'}\n"
@@ -60,7 +70,7 @@ def _format_email_block(msg: EmailMessage, max_body: int) -> str:
         f"Subject: {msg.subject}\n"
         f"Date: {msg.date_header}\n"
         f"Snippet: {msg.snippet}\n"
-        f"Body:\n{body}\n"
+        f"Body{trunc_note}:\n{body}\n"
     )
 
 
