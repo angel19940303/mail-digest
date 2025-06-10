@@ -158,3 +158,21 @@ class WebhookNotifier:
             )
         payload = {"blocks": blocks}
         httpx.post(self.webhook_url, json=payload, timeout=30).raise_for_status()
+
+    def send_error(self, message: str) -> None:
+        if not self.webhook_url:
+            return
+        payload = {
+            "blocks": [
+                {
+                    "type": "header",
+                    "text": {"type": "plain_text", "text": "Email Analyzer — Error"},
+                },
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": message[: self.config.slack.max_chars_per_block]},
+                },
+            ]
+        }
+        httpx.post(self.webhook_url, json=payload, timeout=30).raise_for_status()
+

@@ -65,8 +65,12 @@ def run_job(
             logger.info("Monthly report saved: %s", monthly_path)
 
         return 0
-    except Exception:
+    except Exception as exc:
         logger.exception("Job failed")
+        try:
+            notifier.send_error(f"Email Analyzer failed for {yyyymmdd}: {exc}")
+        except Exception:
+            logger.exception("Failed to send Slack error notification")
         return 1
 
 
