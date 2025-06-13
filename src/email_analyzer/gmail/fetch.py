@@ -61,7 +61,10 @@ def _html_to_text(html: str) -> str:
     soup = BeautifulSoup(html, "html.parser")
     for tag in soup(["script", "style"]):
         tag.decompose()
-    return soup.get_text(separator="\n", strip=True)
+    text = html2text.HTML2Text()
+    text.ignore_links = False
+    text.body_width = 0
+    return text.handle(str(soup)).strip()
 
 
 def _extract_body(payload: dict[str, Any]) -> str:
