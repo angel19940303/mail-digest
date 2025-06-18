@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import sys
-from datetime import date
+from datetime import date, datetime
 
 from email_analyzer.classify.hybrid import classify_messages
 from email_analyzer.config import AppConfig, load_config
@@ -75,8 +75,15 @@ def run_job(
 
 
 def setup_logging(config: AppConfig) -> None:
+    log_dir = config.resolve("logs")
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / f"{datetime.now().date().isoformat()}.log"
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-        handlers=[logging.StreamHandler(sys.stdout)],
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+            logging.FileHandler(log_file, encoding="utf-8"),
+        ],
     )
