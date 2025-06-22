@@ -15,7 +15,10 @@ def _domain_matches(email_addr: str, domains: list[str]) -> bool:
     if not email_addr or "@" not in email_addr:
         return False
     domain = email_addr.split("@", 1)[1].lower()
-    return domain in [d.lower() for d in domains]
+    for rule_domain in domains:
+        if domain == rule_domain or domain.endswith("." + rule_domain):
+            return True
+    return False
 
 
 def _matches_newsletter_pattern(msg: EmailMessage, pattern: NewsletterPattern) -> bool:
