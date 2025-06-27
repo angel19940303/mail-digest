@@ -16,6 +16,12 @@ def _parse_date(value: str) -> date:
 
 def _add_job_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
+        "--date",
+        type=_parse_date,
+        default=None,
+        help="Report date (YYYY-MM-DD) for backfill; window ends 6pm that day",
+    )
+    parser.add_argument(
         "--root",
         type=str,
         default=None,
@@ -33,7 +39,7 @@ def _run_job_command(args: argparse.Namespace) -> int:
     setup_logging(config)
     return run_job(
         config,
-        report_date=None,
+        report_date=args.date,
         interactive=not args.non_interactive,
     )
 
