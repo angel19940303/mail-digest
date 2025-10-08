@@ -193,3 +193,6 @@ The `ReportNotifier` protocol in `src/email_analyzer/slack/base.py` allows swapp
 pytest
 ruff check src tests
 ```
+## Scheduling notes
+
+The daily job is intended to run at **6:00 p.m. local time** via Task Scheduler or cron. Reports and archived emails follow the directory layout in **Output layout** above.
