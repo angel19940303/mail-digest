@@ -48,6 +48,8 @@ def run_job(
             interactive=interactive,
         )
         logger.info("Fetched %d messages", len(messages))
+        if not messages:
+            logger.info("No messages in window; generating empty daily report")
 
         save_messages(config, rd, messages, interactive=interactive)
         messages = classify_messages(config, messages, rd)
