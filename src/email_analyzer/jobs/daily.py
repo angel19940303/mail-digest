@@ -15,7 +15,7 @@ from email_analyzer.reports.generator import (
     generate_weekly_report,
     is_last_day_of_month,
 )
-from email_analyzer.slack.webhook import WebhookNotifier, summary_from_markdown
+from email_analyzer.slack.webhook import get_notifier, summary_from_markdown
 from email_analyzer.storage.emails import save_messages
 from email_analyzer.storage.paths import compute_window, report_date_parts
 
@@ -32,7 +32,7 @@ def run_job(
     window_start, window_end, rd = compute_window(config, report_date=report_date)
 
     _, _, yyyymmdd = report_date_parts(rd)
-    notifier = WebhookNotifier(config)
+    notifier = get_notifier(config)
 
     try:
         logger.info(

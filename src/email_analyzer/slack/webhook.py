@@ -176,3 +176,6 @@ class WebhookNotifier:
         }
         httpx.post(self.webhook_url, json=payload, timeout=30).raise_for_status()
 
+
+def get_notifier(config: AppConfig) -> ReportNotifier:
+    return WebhookNotifier(config)
