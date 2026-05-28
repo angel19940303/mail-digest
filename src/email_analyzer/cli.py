@@ -8,6 +8,8 @@ from datetime import date
 from email_analyzer.config import load_config
 from email_analyzer.gmail.auth import authenticate
 from email_analyzer.jobs.daily import run_job, setup_logging
+from email_analyzer.reports.generator import generate_daily_report
+from email_analyzer.storage.emails import load_messages_for_date
 
 
 def _parse_date(value: str) -> date:
@@ -59,6 +61,24 @@ def main() -> None:
     run_parser = sub.add_parser("run", help="Run daily fetch, analyze, and report job")
     _add_job_args(run_parser)
 
+
+    regen_parser = sub.add_parser(
+        "regenerate",
+        help="Regenerate daily report from archived emails on disk (no Gmail fetch)",
+    )
+    regen_parser.add_argument(
+        "--date",
+        type=_parse_date,
+        required=True,
+        help="Report date (YYYY-MM-DD)",
+    )
+    regen_parser.add_argument(
+        "--root",
+        type=str,
+        default=None,
+        help="Project root directory",
+    )
+
     trigger_parser = sub.add_parser(
         "trigger",
         help="Manually trigger fetch, analyze, report, and Slack (same as run)",
@@ -66,6 +86,15 @@ def main() -> None:
     _add_job_args(trigger_parser)
 
     args = parser.parse_args()
+
+
+    if args.command == "regenerate":
+        config = load_config(args.root)
+        setup_logging(config)
+        messages = load_messages_for_date(config, args.date)
+        _, path = generate_daily_report(config, messages, args.date)
+        print(f"Regenerated report: {path}")
+        return
 
     if args.command == "auth":
         config = load_config(args.root)
