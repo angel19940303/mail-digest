@@ -70,3 +70,18 @@ def test_report_path_name_only():
     # Footer uses .name — verified via send_daily block construction in integration;
     # here we only assert parse logic for nested sample above.
     assert notifier.webhook_url is None
+
+def test_parse_empty_report():
+    n, c, o = parse_report_sections("# Daily\n\n## Newsletter\n_None_", max_bullets=5)
+    assert n == []
+    assert c == []
+    assert o == []
+
+
+def test_parse_minimal_sections():
+    md = "## Newsletter\n- Item one\n\n## Community\n\n## Other\n- Done"
+    n, c, o = parse_report_sections(md, max_bullets=3)
+    assert n == ["Item one"]
+    assert c == []
+    assert o == ["Done"]
+
