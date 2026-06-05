@@ -23,10 +23,10 @@ def _domain_matches(email_addr: str, domains: list[str]) -> bool:
 
 def _matches_newsletter_pattern(msg: EmailMessage, pattern: NewsletterPattern) -> bool:
     from_text = f"{msg.from_addr} {msg.from_email}".lower()
-    if pattern.from_contains not in from_text:
+    if pattern.from_contains.lower() not in from_text:
         return False
     if pattern.subject_prefix:
-        return msg.subject.strip().upper().startswith(pattern.subject_prefix.upper())
+        return msg.subject.strip().lower().startswith(pattern.subject_prefix.lower())
     return True
 
 
