@@ -193,6 +193,29 @@ The `ReportNotifier` protocol in `src/email_analyzer/slack/base.py` allows swapp
 pytest
 ruff check src tests
 ```
-## Scheduling notes
 
-The daily job is intended to run at **6:00 p.m. local time** via Task Scheduler or cron. Reports and archived emails follow the directory layout in **Output layout** above.
+## Troubleshooting
+
+### Error 403: access_denied — app has not completed Google verification
+
+Your OAuth app is in **Testing** mode. Only **Test users** listed in Google Cloud Console can sign in.
+
+Fix:
+
+1. Open [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services** → **OAuth consent screen**
+2. Under **Test users**, click **Add users**
+3. Add the **exact Gmail address** you use to sign in (e.g. `you@gmail.com`)
+4. Save, wait ~1 minute, then run again:
+
+```bash
+python -m email_analyzer auth
+```
+
+5. On the Google sign-in page, if you see “Google hasn’t verified this app”, click **Advanced** → **Go to … (unsafe)** — that is normal for a personal test app.
+
+You do **not** need to publish the app or complete Google verification for personal use. Testing + your account as a test user is enough.
+
+- **Token expired**: run `python -m email_analyzer auth` again
+- **No Slack message**: check `SLACK_WEBHOOK_URL` in `.env`
+- **AI CLI not found**: install Claude Code or Cursor CLI and verify `claude` / `agent` is on PATH
+- **Task Scheduler OAuth**: ensure first auth was done in the same user context as the scheduled task
