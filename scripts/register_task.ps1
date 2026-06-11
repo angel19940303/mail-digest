@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $RunScript = Join-Path $ProjectRoot "scripts\run_daily.ps1"
-$TaskName = "EmailAnalyzerDaily"
+$TaskName = "MailDigestDaily"
 
 if (-not (Test-Path $RunScript)) {
     Write-Error "Run script not found: $RunScript"
@@ -24,7 +24,7 @@ Register-ScheduledTask `
     -Action $Action `
     -Trigger $Trigger `
     -Settings $Settings `
-    -Description "Fetch Gmail, generate AI email report, post to Slack (rolling 24h window ending 6pm)" `
+    -Description "Mail Digest: fetch Gmail, generate AI reports, post Slack summary (24h window ending 6pm)" `
     -Force
 
 Write-Host "Registered scheduled task: $TaskName (daily at 6:00 PM)"

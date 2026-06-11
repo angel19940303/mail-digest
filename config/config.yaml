@@ -1,4 +1,4 @@
-# Email Analyzer configuration
+# Mail Digest configuration
 
 schedule:
   run_hour: 18

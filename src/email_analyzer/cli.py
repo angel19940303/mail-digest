@@ -47,7 +47,7 @@ def _run_job_command(args: argparse.Namespace) -> int:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Email Analyzer — Gmail to Slack reports")
+    parser = argparse.ArgumentParser(description="Mail Digest — Gmail to Slack summaries")
     sub = parser.add_subparsers(dest="command", required=True)
 
     auth_parser = sub.add_parser("auth", help="Run Gmail OAuth flow and save token.json")

@@ -1,6 +1,8 @@
-# Email Analyzer
+# Mail Digest
 
-Fetch Gmail inbox emails on a schedule, archive them locally, generate AI-powered daily/weekly/monthly reports, and post summaries to Slack.
+**Your inbox, summarized.**
+
+Mail Digest helps you stay on top of email without living in your inbox. It fetches Gmail on a schedule, saves messages locally, classifies them into newsletters, community mail, and everything else, and writes clear AI-powered daily, weekly, and monthly reports—with a short summary posted to Slack.
 
 ## Features
 
@@ -23,7 +25,7 @@ Fetch Gmail inbox emails on a schedule, archive them locally, generate AI-powere
 ### 1. Clone and install
 
 ```bash
-cd email-analyzer
+cd mail-digest
 python -m venv .venv
 # Windows
 .venv\Scripts\activate
@@ -39,7 +41,7 @@ pip install -e ".[dev]"
 2. Enable **Gmail API**
 3. Configure **OAuth consent screen**:
    - User type: **External** (personal Gmail) or **Internal** (Google Workspace only)
-   - App name: any name (e.g. Email Analyzer)
+   - App name: any name (e.g. Mail Digest)
    - Add your email under **Test users** (required while app is in **Testing**)
 4. Create **OAuth 2.0 Client ID** (Desktop app)
 5. Download JSON and save as `credentials.json` in the project root
@@ -92,7 +94,7 @@ python -m email_analyzer run
 Or via the installed console script:
 
 ```bash
-email-analyzer trigger
+mail-digest trigger
 ```
 
 Backfill a specific report date (window ends 6 p.m. that day):

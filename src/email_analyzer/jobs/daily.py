@@ -70,7 +70,7 @@ def run_job(
     except Exception as exc:
         logger.exception("Job failed")
         try:
-            notifier.send_error(f"Email Analyzer failed for {yyyymmdd}: {exc}")
+            notifier.send_error(f"Mail Digest failed for {yyyymmdd}: {exc}")
         except Exception:
             logger.exception("Failed to send Slack error notification")
         return 1

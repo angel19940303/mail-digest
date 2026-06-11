@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 
 def project_root() -> Path:
-    env_root = os.environ.get("EMAIL_ANALYZER_ROOT")
+    env_root = os.environ.get("MAIL_DIGEST_ROOT") or os.environ.get("EMAIL_ANALYZER_ROOT")
     if env_root:
         return Path(env_root).resolve()
     # Walk up from this file to find config/config.yaml

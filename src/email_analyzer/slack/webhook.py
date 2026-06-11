@@ -166,7 +166,7 @@ class WebhookNotifier:
             "blocks": [
                 {
                     "type": "header",
-                    "text": {"type": "plain_text", "text": "Email Analyzer — Error"},
+                    "text": {"type": "plain_text", "text": "Mail Digest — Error"},
                 },
                 {
                     "type": "section",

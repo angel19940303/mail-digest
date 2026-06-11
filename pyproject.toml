@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "email-analyzer"
+name = "mail-digest"
 version = "0.1.1"
-description = "Fetch Gmail emails, analyze with AI CLI, and post reports to Slack"
+description = "Fetch Gmail, classify messages, generate AI daily/weekly/monthly reports, and post Slack summaries"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -22,7 +22,7 @@ dependencies = [
 dev = ["pytest>=8.0", "ruff>=0.4.0"]
 
 [project.scripts]
-email-analyzer = "email_analyzer.cli:main"
+mail-digest = "email_analyzer.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -17,9 +17,9 @@ if (-not (Test-Path $VenvActivate)) {
 
 . $VenvActivate
 
-$env:EMAIL_ANALYZER_ROOT = $ProjectRoot
+$env:MAIL_DIGEST_ROOT = $ProjectRoot
 
-"[$((Get-Date).ToString('o'))] Starting email-analyzer run" | Tee-Object -FilePath $LogFile -Append
+"[$((Get-Date).ToString('o'))] Starting Mail Digest run" | Tee-Object -FilePath $LogFile -Append
 
 python -m email_analyzer run --non-interactive 2>&1 | Tee-Object -FilePath $LogFile -Append
 $exitCode = $LASTEXITCODE
