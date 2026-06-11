@@ -111,6 +111,21 @@ def load_messages_for_date(config: AppConfig, report_date: date) -> list[EmailMe
     return messages
 
 
+def iter_archived_dates(config: AppConfig) -> list[date]:
+    """Return report dates that have at least one archived email."""
+    base = config.resolve(config.paths.emails)
+    if not base.exists():
+        return []
+
+    dates: set[date] = set()
+    for meta_file in base.rglob("*.meta.json"):
+        try:
+            dates.add(date.fromisoformat(meta_file.parent.name))
+        except ValueError:
+            continue
+    return sorted(dates)
+
+
 def update_message_category(
     config: AppConfig,
     report_date: date,

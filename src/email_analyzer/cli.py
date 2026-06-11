@@ -7,9 +7,10 @@ from datetime import date
 
 from email_analyzer.config import load_config
 from email_analyzer.gmail.auth import authenticate
+from email_analyzer.classify.hybrid import classify_messages, reclassify_archived
 from email_analyzer.jobs.daily import run_job, setup_logging
 from email_analyzer.reports.generator import generate_daily_report
-from email_analyzer.storage.emails import load_messages_for_date
+from email_analyzer.storage.emails import iter_archived_dates, load_messages_for_date
 
 
 def _parse_date(value: str) -> date:
@@ -79,6 +80,28 @@ def main() -> None:
         help="Project root directory",
     )
 
+    reclassify_parser = sub.add_parser(
+        "reclassify",
+        help="Re-apply sender rules to archived emails on disk",
+    )
+    reclassify_parser.add_argument(
+        "--date",
+        type=_parse_date,
+        default=None,
+        help="Report date (YYYY-MM-DD); omit with --all to process every archived date",
+    )
+    reclassify_parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Reclassify every archived date",
+    )
+    reclassify_parser.add_argument(
+        "--root",
+        type=str,
+        default=None,
+        help="Project root directory",
+    )
+
     trigger_parser = sub.add_parser(
         "trigger",
         help="Manually trigger fetch, analyze, report, and Slack (same as run)",
@@ -92,8 +115,33 @@ def main() -> None:
         config = load_config(args.root)
         setup_logging(config)
         messages = load_messages_for_date(config, args.date)
+        messages = classify_messages(config, messages, args.date)
         _, path = generate_daily_report(config, messages, args.date)
         print(f"Regenerated report: {path}")
+        return
+
+    if args.command == "reclassify":
+        config = load_config(args.root)
+        setup_logging(config)
+        if args.all:
+            dates = iter_archived_dates(config)
+        elif args.date is not None:
+            dates = [args.date]
+        else:
+            raise SystemExit("Provide --date YYYY-MM-DD or --all")
+
+        total_changed = 0
+        for d in dates:
+            counts, changed = reclassify_archived(config, d)
+            total_changed += changed
+            print(
+                f"{d.isoformat()}: "
+                f"newsletter={counts['newsletter']}, "
+                f"community={counts['community']}, "
+                f"other={counts['other']} "
+                f"({changed} updated)"
+            )
+        print(f"Done. {total_changed} categor{'y' if total_changed == 1 else 'ies'} updated.")
         return
 
     if args.command == "auth":

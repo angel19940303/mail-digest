@@ -50,6 +50,21 @@ def test_alphasignal_is_newsletter():
     assert classify_by_rules(config, msg) == "newsletter"
 
 
+def test_alphasignal_without_tldr_subject_is_newsletter():
+    """AlphaSignal subjects are not TLDR-prefixed; from_contains alone must match."""
+    rules = SenderRules(
+        newsletter_patterns=[NewsletterPattern(from_contains="alphasignal")],
+        newsletter_domains=["tldrnewsletter.com"],
+    )
+    config = _config(rules)
+    msg = _msg(
+        "news@alphasignal.ai",
+        from_addr="AlphaSignal <news@alphasignal.ai>",
+        subject="Claude Fable 5 leaked prompts reveal new Mythos tier",
+    )
+    assert classify_by_rules(config, msg) == "newsletter"
+
+
 def test_tldr_domain_is_newsletter():
     rules = SenderRules(
         newsletter_patterns=[NewsletterPattern(from_contains="alphasignal")],

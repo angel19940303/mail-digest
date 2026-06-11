@@ -3,7 +3,8 @@
 newsletter:
   patterns:
     - from_contains: alphasignal
-      subject_prefix: TLDR
+  domains:
+    - tldrnewsletter.com
 
 community:
   domains:

@@ -6,7 +6,7 @@ from typing import Literal
 
 from email_analyzer.config import AppConfig, NewsletterPattern
 from email_analyzer.gmail.fetch import EmailMessage
-from email_analyzer.storage.emails import update_message_category
+from email_analyzer.storage.emails import load_messages_for_date, update_message_category
 
 Category = Literal["newsletter", "community", "other"]
 
@@ -62,3 +62,21 @@ def classify_messages(
         update_message_category(config, report_date, msg.message_id, cat)
         classified.append(msg)
     return classified
+
+
+def reclassify_archived(
+    config: AppConfig,
+    report_date,
+) -> tuple[dict[str, int], int]:
+    """Re-apply sender rules to archived emails; returns counts and change count."""
+    messages = load_messages_for_date(config, report_date)
+    if not messages:
+        return {"newsletter": 0, "community": 0, "other": 0}, 0
+
+    before = {m.message_id: m.category for m in messages}
+    messages = classify_messages(config, messages, report_date)
+    counts: dict[str, int] = {"newsletter": 0, "community": 0, "other": 0}
+    for msg in messages:
+        counts[msg.category or "other"] += 1
+    changed = sum(1 for m in messages if before.get(m.message_id) != m.category)
+    return counts, changed

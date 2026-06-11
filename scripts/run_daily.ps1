@@ -8,10 +8,16 @@ $LogDir = Join-Path $ProjectRoot "logs"
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 $LogFile = Join-Path $LogDir "$(Get-Date -Format 'yyyy-MM-dd').log"
 
+function Write-LogLine {
+    param([string]$Message)
+    $line = "[$((Get-Date).ToString('o'))] $Message"
+    Write-Host $line
+    Add-Content -Path $LogFile -Value $line -Encoding utf8
+}
+
 $VenvActivate = Join-Path $ProjectRoot ".venv\Scripts\Activate.ps1"
 if (-not (Test-Path $VenvActivate)) {
-    "[$((Get-Date).ToString('o'))] ERROR: .venv not found. Run: python -m venv .venv; pip install -e ." |
-        Tee-Object -FilePath $LogFile -Append
+    Write-LogLine "ERROR: .venv not found. Run: python -m venv .venv; pip install -e ."
     exit 1
 }
 
@@ -19,10 +25,12 @@ if (-not (Test-Path $VenvActivate)) {
 
 $env:MAIL_DIGEST_ROOT = $ProjectRoot
 
-"[$((Get-Date).ToString('o'))] Starting Mail Digest run" | Tee-Object -FilePath $LogFile -Append
+Write-LogLine "Starting Mail Digest run"
 
-python -m email_analyzer run --non-interactive 2>&1 | Tee-Object -FilePath $LogFile -Append
+# Python setup_logging writes to the same daily log file; do not Tee-Object here or
+# Windows will lock the file (FileHandler vs Out-File exclusive access).
+python -m email_analyzer run --non-interactive 2>&1
 $exitCode = $LASTEXITCODE
 
-"[$((Get-Date).ToString('o'))] Finished with exit code $exitCode" | Tee-Object -FilePath $LogFile -Append
+Write-LogLine "Finished with exit code $exitCode"
 exit $exitCode
