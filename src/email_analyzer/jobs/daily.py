@@ -47,7 +47,7 @@ def run_job(
             window_end,
             interactive=interactive,
         )
-        logger.info("Fetched %d messages", len(messages))
+        logger.info("[%s] Fetched %d messages", yyyymmdd, len(messages))
         if not messages:
             logger.info("No messages in window; generating empty daily report")
 
@@ -57,7 +57,7 @@ def run_job(
         content, report_path = generate_daily_report(config, messages, rd)
         summary = summary_from_markdown(content, yyyymmdd, report_path, config)
         notifier.send_daily(summary)
-        logger.info("Daily report saved: %s", report_path)
+        logger.info("[%s] Daily report saved: %s", yyyymmdd, report_path)
         if rd.weekday() == 6:  # Sunday
             _, weekly_path = generate_weekly_report(config, rd)
             logger.info("Weekly report saved: %s", weekly_path)
