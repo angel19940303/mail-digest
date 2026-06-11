@@ -126,6 +126,34 @@ def _load_yaml(path: Path) -> dict:
         return yaml.safe_load(f) or {}
 
 
+def _deep_merge(base: dict, override: dict) -> dict:
+    merged = dict(base)
+    for key, value in override.items():
+        if (
+            key in merged
+            and isinstance(merged[key], dict)
+            and isinstance(value, dict)
+        ):
+            merged[key] = _deep_merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def _merged_yaml(root: Path, filename: str, *, env_var: str | None = None) -> dict:
+    """Load base YAML from config/ and merge personal overrides on top."""
+    base = _load_yaml(root / "config" / filename)
+    override_path = os.environ.get(env_var) if env_var else None
+    if override_path:
+        override = _load_yaml(Path(override_path).expanduser())
+    else:
+        local_name = filename.removesuffix(".yaml") + ".local.yaml"
+        override = _load_yaml(root / "config" / local_name)
+    if not override:
+        return base
+    return _deep_merge(base, override)
+
+
 def load_config(root: Path | str | None = None) -> AppConfig:
     load_dotenv()
     if root is None:
@@ -133,7 +161,7 @@ def load_config(root: Path | str | None = None) -> AppConfig:
     elif isinstance(root, str):
         root = Path(root).resolve()
 
-    raw = _load_yaml(root / "config" / "config.yaml")
+    raw = _merged_yaml(root, "config.yaml", env_var="MAIL_DIGEST_CONFIG")
     schedule_raw = raw.get("schedule", {})
     ai_raw = raw.get("ai", {})
     openrouter_raw = ai_raw.get("openrouter", {})
@@ -143,7 +171,11 @@ def load_config(root: Path | str | None = None) -> AppConfig:
     paths_raw = raw.get("paths", {})
     slack_raw = raw.get("slack", {})
 
-    rules_raw = _load_yaml(root / "config" / "sender_rules.yaml")
+    rules_raw = _merged_yaml(
+        root,
+        "sender_rules.yaml",
+        env_var="MAIL_DIGEST_SENDER_RULES",
+    )
     newsletter = rules_raw.get("newsletter", {})
     community = rules_raw.get("community", {})
 

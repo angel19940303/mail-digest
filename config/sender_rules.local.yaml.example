@@ -1,0 +1,8 @@
+# Copy to sender_rules.local.yaml (gitignored) for personal sender rules.
+# Merged on top of sender_rules.yaml.
+
+# newsletter:
+#   domains:
+#     - make.com
+#   addresses:
+#     - info@make.com

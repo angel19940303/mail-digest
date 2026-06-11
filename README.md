@@ -58,16 +58,36 @@ Edit `.env`:
 SLACK_WEBHOOK_URL=https://hooks.slack.com/services/XXX/YYY/ZZZ
 ```
 
-### 4. Configure sender rules
+### 4. Configure sender rules and settings
 
-Edit [`config/sender_rules.yaml`](config/sender_rules.yaml) with known newsletter and community domains/addresses.
+**Personal overrides (recommended)** — keep repo defaults in git, put your own settings in local files:
 
-Edit [`config/config.yaml`](config/config.yaml) to switch AI provider:
+```bash
+cp config/config.local.yaml.example config/config.local.yaml
+cp config/sender_rules.local.yaml.example config/sender_rules.local.yaml
+```
+
+Edit `config/config.local.yaml` and `config/sender_rules.local.yaml`. Only include keys you want to change; they are **merged on top of** the base YAML files and are gitignored.
+
+Example `config/config.local.yaml`:
 
 ```yaml
 ai:
-  provider: claude   # or cursor
+  provider: cursor
+
+gmail:
+  trash_after_save: false
 ```
+
+Alternatively, point to a config file anywhere on disk:
+
+```bash
+# .env or shell
+MAIL_DIGEST_CONFIG=D:\path\to\my-config.yaml
+MAIL_DIGEST_SENDER_RULES=D:\path\to\my-sender-rules.yaml
+```
+
+You can also edit [`config/config.yaml`](config/config.yaml) and [`config/sender_rules.yaml`](config/sender_rules.yaml) directly if you do not need a separate personal file.
 
 ### 5. Authenticate Gmail
 

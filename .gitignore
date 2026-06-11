@@ -11,6 +11,10 @@ build/
 credentials.json
 token.json
 
+# Personal config overrides
+config/config.local.yaml
+config/sender_rules.local.yaml
+
 # Data
 emails/
 daily_reports/

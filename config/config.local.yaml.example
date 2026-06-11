@@ -1,0 +1,15 @@
+# Copy to config.local.yaml (gitignored) for personal overrides.
+# Only include keys you want to change; they are merged on top of config.yaml.
+
+# schedule:
+#   run_hour: 19
+
+# ai:
+#   provider: cursor
+
+# gmail:
+#   mark_read_after_save: true
+#   trash_after_save: false
+
+# paths:
+#   email_retention_days: 90
