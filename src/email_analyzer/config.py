@@ -53,14 +53,17 @@ class AIConfig:
     openrouter: OpenRouterConfig = field(default_factory=OpenRouterConfig)
 
 
+GMAIL_MODIFY_SCOPE = "https://www.googleapis.com/auth/gmail.modify"
+
+
 @dataclass
 class GmailConfig:
     credentials_file: str = "credentials.json"
     token_file: str = "token.json"
-    scopes: list[str] = field(
-        default_factory=lambda: ["https://www.googleapis.com/auth/gmail.readonly"]
-    )
+    scopes: list[str] = field(default_factory=lambda: [GMAIL_MODIFY_SCOPE])
     broad_query: str = "in:inbox newer_than:2d"
+    mark_read_after_save: bool = True
+    trash_after_save: bool = True
 
 
 @dataclass
@@ -69,6 +72,7 @@ class PathsConfig:
     daily_reports: str = "daily_reports"
     weekly_reports: str = "weekly_reports"
     monthly_reports: str = "monthly_report"
+    email_retention_days: int = 0
 
 
 @dataclass
@@ -172,19 +176,17 @@ def load_config(root: Path | str | None = None) -> AppConfig:
         gmail=GmailConfig(
             credentials_file=str(gmail_raw.get("credentials_file", "credentials.json")),
             token_file=str(gmail_raw.get("token_file", "token.json")),
-            scopes=list(
-                gmail_raw.get(
-                    "scopes",
-                    ["https://www.googleapis.com/auth/gmail.readonly"],
-                )
-            ),
+            scopes=list(gmail_raw.get("scopes", [GMAIL_MODIFY_SCOPE])),
             broad_query=str(gmail_raw.get("broad_query", "in:inbox newer_than:2d")),
+            mark_read_after_save=bool(gmail_raw.get("mark_read_after_save", True)),
+            trash_after_save=bool(gmail_raw.get("trash_after_save", True)),
         ),
         paths=PathsConfig(
             emails=str(paths_raw.get("emails", "emails")),
             daily_reports=str(paths_raw.get("daily_reports", "daily_reports")),
             weekly_reports=str(paths_raw.get("weekly_reports", "weekly_reports")),
             monthly_reports=str(paths_raw.get("monthly_reports", "monthly_report")),
+            email_retention_days=int(paths_raw.get("email_retention_days", 0)),
         ),
         slack=SlackConfig(
             max_bullets_per_section=int(slack_raw.get("max_bullets_per_section", 5)),

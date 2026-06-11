@@ -26,14 +26,17 @@ gmail:
   credentials_file: credentials.json
   token_file: token.json
   scopes:
-    - https://www.googleapis.com/auth/gmail.readonly
+    - https://www.googleapis.com/auth/gmail.modify
   broad_query: "in:inbox newer_than:2d"
+  mark_read_after_save: true
+  trash_after_save: true
 
 paths:
   emails: emails
   daily_reports: daily_reports
   weekly_reports: weekly_reports
   monthly_reports: monthly_report
+  email_retention_days: 0  # 0 = keep local archives forever
 
 slack:
   max_bullets_per_section: 5

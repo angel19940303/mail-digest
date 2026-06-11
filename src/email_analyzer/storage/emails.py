@@ -3,14 +3,19 @@
 from __future__ import annotations
 
 import json
+import logging
+import shutil
 from dataclasses import asdict
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from email_analyzer.config import AppConfig
+from email_analyzer.gmail.actions import apply_post_save_actions
 from email_analyzer.gmail.auth import build_gmail_service
 from email_analyzer.gmail.fetch import EmailMessage, download_raw_eml
 from email_analyzer.storage.paths import emails_dir
+
+logger = logging.getLogger(__name__)
 
 
 def _meta_path(dest: Path, message_id: str) -> Path:
@@ -27,6 +32,21 @@ def message_to_meta(msg: EmailMessage) -> dict:
     return data
 
 
+def _apply_gmail_post_save(
+    config: AppConfig,
+    service,
+    message_id: str,
+) -> None:
+    if not config.gmail.mark_read_after_save and not config.gmail.trash_after_save:
+        return
+    apply_post_save_actions(
+        service,
+        message_id,
+        mark_read=config.gmail.mark_read_after_save,
+        trash=config.gmail.trash_after_save,
+    )
+
+
 def save_message(
     config: AppConfig,
     report_date: date,
@@ -39,6 +59,7 @@ def save_message(
 
     meta_path = _meta_path(dest, msg.message_id)
     eml_path = _eml_path(dest, msg.message_id)
+    service = None
 
     if not eml_path.exists():
         service = build_gmail_service(config, interactive=interactive)
@@ -48,6 +69,11 @@ def save_message(
         json.dumps(message_to_meta(msg), indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
+
+    if config.gmail.mark_read_after_save or config.gmail.trash_after_save:
+        if service is None:
+            service = build_gmail_service(config, interactive=interactive)
+        _apply_gmail_post_save(config, service, msg.message_id)
     return dest
 
 
@@ -81,8 +107,45 @@ def save_messages(
             json.dumps(message_to_meta(msg), indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
+
+        if config.gmail.mark_read_after_save or config.gmail.trash_after_save:
+            if service is None:
+                service = build_gmail_service(config, interactive=interactive)
+            _apply_gmail_post_save(config, service, msg.message_id)
+
         saved.append(dest)
     return saved
+
+
+def purge_old_archives(config: AppConfig, *, today: date | None = None) -> int:
+    """Delete local email archives older than email_retention_days. Returns dirs removed."""
+    retention = config.paths.email_retention_days
+    if retention <= 0:
+        return 0
+
+    cutoff = (today or date.today()) - timedelta(days=retention)
+    base = config.resolve(config.paths.emails)
+    if not base.exists():
+        return 0
+
+    removed = 0
+    seen: set[Path] = set()
+    for meta_file in base.rglob("*.meta.json"):
+        archive_dir = meta_file.parent
+        if archive_dir in seen:
+            continue
+        seen.add(archive_dir)
+        try:
+            archive_date = date.fromisoformat(archive_dir.name)
+        except ValueError:
+            continue
+        if archive_date >= cutoff:
+            continue
+        shutil.rmtree(archive_dir)
+        removed += 1
+        logger.info("Purged old email archive: %s", archive_dir)
+
+    return removed
 
 
 def load_messages_for_date(config: AppConfig, report_date: date) -> list[EmailMessage]:

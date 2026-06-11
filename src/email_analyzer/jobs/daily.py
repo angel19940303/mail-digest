@@ -16,7 +16,7 @@ from email_analyzer.reports.generator import (
     is_last_day_of_month,
 )
 from email_analyzer.slack.webhook import get_notifier, summary_from_markdown
-from email_analyzer.storage.emails import save_messages
+from email_analyzer.storage.emails import purge_old_archives, save_messages
 from email_analyzer.storage.paths import compute_window, report_date_parts
 
 logger = logging.getLogger(__name__)
@@ -52,6 +52,9 @@ def run_job(
             logger.info("No messages in window; generating empty daily report")
 
         save_messages(config, rd, messages, interactive=interactive)
+        purged = purge_old_archives(config, today=rd)
+        if purged:
+            logger.info("Purged %d old email archive(s)", purged)
         messages = classify_messages(config, messages, rd)
 
         content, report_path = generate_daily_report(config, messages, rd)

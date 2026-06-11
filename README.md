@@ -7,7 +7,7 @@ Mail Digest helps you stay on top of email without living in your inbox. It fetc
 ## Features
 
 - **Rolling 24-hour window**: at 6:00 p.m. local time, fetches inbox mail from 6:00 p.m. yesterday → 6:00 p.m. today
-- **Local archive**: `emails/YYYY/YYYY-MM/YYYY-MM-DD/` (`.eml` + `.meta.json`)
+- **Local archive**: `emails/YYYY/YYYY-MM/YYYY-MM-DD/` (`.eml` + `.meta.json`); after save, Gmail messages are marked read and moved to Trash
 - **Rule-based classification**: AlphaSignal + TLDR (`tldrnewsletter.com`) → Newsletter; `@lists.boost.org` → Community; else Other
 - **AI reports**: Claude Code CLI or Cursor CLI (configurable)
 - **Slack**: structured Block Kit summary via webhook
@@ -75,7 +75,18 @@ ai:
 python -m email_analyzer auth
 ```
 
-Opens a browser once; saves `token.json` for headless runs.
+Opens a browser once; saves `token.json` for headless runs. The app uses the `gmail.modify` scope (read inbox, mark read, move to Trash). If you previously authenticated with read-only access, delete `token.json` and run `auth` again.
+
+Gmail cleanup after each successful local save (toggle in `config/config.yaml`):
+
+```yaml
+gmail:
+  mark_read_after_save: true
+  trash_after_save: true
+
+paths:
+  email_retention_days: 0  # delete local archives older than N days; 0 = keep forever
+```
 
 ### 6. Run manually
 

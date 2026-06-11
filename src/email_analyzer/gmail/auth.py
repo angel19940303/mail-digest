@@ -7,9 +7,9 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
-from email_analyzer.config import AppConfig
+from email_analyzer.config import AppConfig, GMAIL_MODIFY_SCOPE
 
-SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
+SCOPES = [GMAIL_MODIFY_SCOPE]
 
 
 def load_credentials(config: AppConfig) -> Credentials | None:
