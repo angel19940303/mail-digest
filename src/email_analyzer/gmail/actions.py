@@ -28,6 +28,14 @@ def apply_post_save_actions(
     mark_read: bool,
     trash: bool,
 ) -> None:
+    if mark_read and trash:
+        service.users().messages().modify(
+            userId="me",
+            id=message_id,
+            body={"removeLabelIds": ["UNREAD"], "addLabelIds": ["TRASH"]},
+        ).execute()
+        logger.debug("Marked message %s as read and moved to trash", message_id)
+        return
     if mark_read:
         mark_message_read(service, message_id)
     if trash:

@@ -22,8 +22,12 @@ def test_trash_message():
 def test_apply_post_save_actions_both():
     service = MagicMock()
     apply_post_save_actions(service, "abc123", mark_read=True, trash=True)
-    service.users().messages().modify.assert_called_once()
-    service.users().messages().trash.assert_called_once()
+    service.users().messages().modify.assert_called_once_with(
+        userId="me",
+        id="abc123",
+        body={"removeLabelIds": ["UNREAD"], "addLabelIds": ["TRASH"]},
+    )
+    service.users().messages().trash.assert_not_called()
 
 
 def test_apply_post_save_actions_mark_only():
@@ -31,3 +35,10 @@ def test_apply_post_save_actions_mark_only():
     apply_post_save_actions(service, "abc123", mark_read=True, trash=False)
     service.users().messages().modify.assert_called_once()
     service.users().messages().trash.assert_not_called()
+
+
+def test_apply_post_save_actions_trash_only():
+    service = MagicMock()
+    apply_post_save_actions(service, "abc123", mark_read=False, trash=True)
+    service.users().messages().modify.assert_not_called()
+    service.users().messages().trash.assert_called_once_with(userId="me", id="abc123")
