@@ -62,6 +62,8 @@ class GmailConfig:
     token_file: str = "token.json"
     scopes: list[str] = field(default_factory=lambda: [GMAIL_MODIFY_SCOPE])
     broad_query: str = "in:inbox newer_than:2d"
+    inbox_cleanup_query: str = "in:inbox"
+    inbox_cleanup_enabled: bool = True
     mark_read_after_save: bool = True
     trash_after_save: bool = True
 
@@ -210,6 +212,8 @@ def load_config(root: Path | str | None = None) -> AppConfig:
             token_file=str(gmail_raw.get("token_file", "token.json")),
             scopes=list(gmail_raw.get("scopes", [GMAIL_MODIFY_SCOPE])),
             broad_query=str(gmail_raw.get("broad_query", "in:inbox newer_than:2d")),
+            inbox_cleanup_query=str(gmail_raw.get("inbox_cleanup_query", "in:inbox")),
+            inbox_cleanup_enabled=bool(gmail_raw.get("inbox_cleanup_enabled", True)),
             mark_read_after_save=bool(gmail_raw.get("mark_read_after_save", True)),
             trash_after_save=bool(gmail_raw.get("trash_after_save", True)),
         ),

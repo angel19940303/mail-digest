@@ -103,10 +103,14 @@ Gmail cleanup after each successful local save (toggle in `config/config.yaml`):
 gmail:
   mark_read_after_save: true
   trash_after_save: true
+  inbox_cleanup_enabled: true
+  inbox_cleanup_query: "in:inbox"  # archive + mark read + trash remaining inbox mail
 
 paths:
   email_retention_days: 0  # delete local archives older than N days; 0 = keep forever
 ```
+
+The daily report only fetches mail in the last 24-hour window (`broad_query` uses `newer_than:2d` as a pre-filter). Inbox cleanup runs afterward to handle older messages still sitting in Gmail.
 
 ### 6. Run manually
 

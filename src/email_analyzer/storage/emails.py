@@ -148,6 +148,21 @@ def purge_old_archives(config: AppConfig, *, today: date | None = None) -> int:
     return removed
 
 
+def index_archived_message_ids(config: AppConfig) -> set[str]:
+    """Return Gmail message IDs that already have a local archive."""
+    base = config.resolve(config.paths.emails)
+    if not base.exists():
+        return set()
+
+    ids: set[str] = set()
+    for meta_file in base.rglob("*.meta.json"):
+        data = json.loads(meta_file.read_text(encoding="utf-8"))
+        message_id = data.get("message_id")
+        if message_id:
+            ids.add(message_id)
+    return ids
+
+
 def load_messages_for_date(config: AppConfig, report_date: date) -> list[EmailMessage]:
     dest = emails_dir(config, report_date)
     if not dest.exists():

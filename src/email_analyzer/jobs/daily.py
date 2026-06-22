@@ -9,6 +9,7 @@ from datetime import date, datetime
 from email_analyzer.classify.hybrid import classify_messages
 from email_analyzer.config import AppConfig, load_config
 from email_analyzer.gmail.fetch import fetch_messages_in_window
+from email_analyzer.gmail.inbox_cleanup import cleanup_inbox
 from email_analyzer.reports.generator import (
     generate_daily_report,
     generate_monthly_report,
@@ -52,6 +53,9 @@ def run_job(
             logger.info("No messages in window; generating empty daily report")
 
         save_messages(config, rd, messages, interactive=interactive)
+        cleaned = cleanup_inbox(config, interactive=interactive)
+        if cleaned:
+            logger.info("Inbox cleanup removed %d message(s) from inbox", cleaned)
         purged = purge_old_archives(config, today=rd)
         if purged:
             logger.info("Purged %d old email archive(s)", purged)
