@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 
 from google.auth.exceptions import RefreshError
 from google.auth.transport.requests import Request
@@ -11,6 +12,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 from email_analyzer.config import AppConfig, GMAIL_MODIFY_SCOPE
+
+logger = logging.getLogger(__name__)
 
 SCOPES = [GMAIL_MODIFY_SCOPE]
 
@@ -25,6 +28,14 @@ def _scopes_satisfied(granted: list[str] | None, required: list[str]) -> bool:
 
 def _clear_token(config: AppConfig) -> None:
     config.token_path.unlink(missing_ok=True)
+
+
+def _refresh_error_needs_reauth(exc: RefreshError) -> bool:
+    msg = str(exc).lower()
+    return any(
+        keyword in msg
+        for keyword in ("invalid_scope", "invalid_grant", "expired", "revoked")
+    )
 
 
 def _token_granted_scopes(token_path) -> list[str] | None:
@@ -52,7 +63,8 @@ def load_credentials(config: AppConfig) -> Credentials | None:
             creds.refresh(Request())
             save_credentials(config, creds)
         except RefreshError as exc:
-            if "invalid_scope" in str(exc).lower():
+            if _refresh_error_needs_reauth(exc):
+                logger.warning("Gmail token refresh failed (%s); clearing token", exc)
                 _clear_token(config)
                 return None
             raise

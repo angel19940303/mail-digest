@@ -65,3 +65,30 @@ def test_load_credentials_clears_token_on_invalid_scope_refresh(tmp_path):
     with patch("email_analyzer.gmail.auth.Credentials.from_authorized_user_file", return_value=creds):
         assert load_credentials(config) is None
     assert not config.token_path.exists()
+
+
+def test_load_credentials_clears_token_on_invalid_grant_refresh(tmp_path):
+    config = _config(tmp_path)
+    token = {
+        "token": "x",
+        "refresh_token": "y",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "client_id": "id",
+        "client_secret": "secret",
+        "scopes": [GMAIL_MODIFY_SCOPE],
+        "expiry": "2000-01-01T00:00:00Z",
+    }
+    config.token_path.write_text(json.dumps(token), encoding="utf-8")
+
+    creds = MagicMock()
+    creds.scopes = [GMAIL_MODIFY_SCOPE]
+    creds.expired = True
+    creds.refresh_token = "y"
+    creds.refresh.side_effect = RefreshError(
+        "invalid_grant: Token has been expired or revoked.",
+        {"error": "invalid_grant", "error_description": "Token has been expired or revoked."},
+    )
+
+    with patch("email_analyzer.gmail.auth.Credentials.from_authorized_user_file", return_value=creds):
+        assert load_credentials(config) is None
+    assert not config.token_path.exists()
