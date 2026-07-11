@@ -157,12 +157,16 @@ def _merged_yaml(root: Path, filename: str, *, env_var: str | None = None) -> di
 
 def load_config(root: Path | str | None = None) -> AppConfig:
     load_dotenv()
+    explicit_root = root is not None
     if root is None:
         root = project_root()
     elif isinstance(root, str):
         root = Path(root).resolve()
 
-    raw = _merged_yaml(root, "config.yaml", env_var="MAIL_DIGEST_CONFIG")
+    config_env = None if explicit_root else "MAIL_DIGEST_CONFIG"
+    rules_env = None if explicit_root else "MAIL_DIGEST_SENDER_RULES"
+
+    raw = _merged_yaml(root, "config.yaml", env_var=config_env)
     schedule_raw = raw.get("schedule", {})
     ai_raw = raw.get("ai", {})
     openrouter_raw = ai_raw.get("openrouter", {})
@@ -175,7 +179,7 @@ def load_config(root: Path | str | None = None) -> AppConfig:
     rules_raw = _merged_yaml(
         root,
         "sender_rules.yaml",
-        env_var="MAIL_DIGEST_SENDER_RULES",
+        env_var=rules_env,
     )
     newsletter = rules_raw.get("newsletter", {})
     community = rules_raw.get("community", {})
