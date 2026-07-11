@@ -6,7 +6,7 @@ import argparse
 from datetime import date
 
 from email_analyzer.config import load_config
-from email_analyzer.gmail.auth import authenticate
+from email_analyzer.gmail.auth import _run_browser_login
 from email_analyzer.classify.hybrid import classify_messages, reclassify_archived
 from email_analyzer.jobs.daily import run_job, setup_logging
 from email_analyzer.reports.generator import generate_daily_report
@@ -33,7 +33,7 @@ def _add_job_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--non-interactive",
         action="store_true",
-        help="Fail instead of opening browser for OAuth",
+        help="Fail instead of prompting for browser sign-in when Gmail token is invalid",
     )
 
 
@@ -146,7 +146,7 @@ def main() -> None:
 
     if args.command == "auth":
         config = load_config(args.root)
-        authenticate(config, interactive=True)
+        _run_browser_login(config)
         print(f"Token saved to {config.token_path}")
         return
 

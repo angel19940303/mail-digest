@@ -29,7 +29,7 @@ Write-LogLine "Starting Mail Digest run"
 
 # Python setup_logging writes to the same daily log file; do not Tee-Object here or
 # Windows will lock the file (FileHandler vs Out-File exclusive access).
-python -m email_analyzer run --non-interactive 2>&1
+python -m email_analyzer run 2>&1
 $exitCode = $LASTEXITCODE
 
 Write-LogLine "Finished with exit code $exitCode"

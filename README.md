@@ -95,7 +95,7 @@ You can also edit [`config/config.yaml`](config/config.yaml) and [`config/sender
 python -m email_analyzer auth
 ```
 
-Opens a browser once; saves `token.json` for headless runs. The app uses the `gmail.modify` scope (read inbox, mark read, move to Trash). If you previously authenticated with read-only access, delete `token.json` and run `auth` again.
+Opens Chrome for Google sign-in and saves `token.json`. If the token is missing or invalid during a normal run, the app prompts you to press any key, then opens Chrome automatically. The app uses the `gmail.modify` scope (read inbox, mark read, move to Trash). If you previously authenticated with read-only access, delete `token.json` and run `auth` again.
 
 Gmail handling (toggle in `config/config.yaml`):
 
