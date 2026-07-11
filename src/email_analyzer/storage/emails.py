@@ -124,6 +124,7 @@ def purge_old_archives(config: AppConfig, *, today: date | None = None) -> int:
 
     removed = 0
     seen: set[Path] = set()
+    dirs_to_remove: list[Path] = []
     for meta_file in base.rglob("*.meta.json"):
         archive_dir = meta_file.parent
         if archive_dir in seen:
@@ -135,6 +136,9 @@ def purge_old_archives(config: AppConfig, *, today: date | None = None) -> int:
             continue
         if archive_date >= cutoff:
             continue
+        dirs_to_remove.append(archive_dir)
+
+    for archive_dir in dirs_to_remove:
         shutil.rmtree(archive_dir)
         removed += 1
         logger.info("Purged old email archive: %s", archive_dir)
