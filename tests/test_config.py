@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import yaml
 
 from email_analyzer.config import _deep_merge, _merged_yaml, load_config
