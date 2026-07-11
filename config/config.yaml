@@ -28,10 +28,9 @@ gmail:
   scopes:
     - https://www.googleapis.com/auth/gmail.modify
   broad_query: "in:inbox newer_than:2d"
-  inbox_cleanup_query: "in:inbox"
   inbox_cleanup_enabled: true
+  trash_older_than_days: 7
   mark_read_after_save: true
-  trash_after_save: true
 
 paths:
   emails: emails

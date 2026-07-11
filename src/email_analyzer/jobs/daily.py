@@ -55,7 +55,7 @@ def run_job(
         save_messages(config, rd, messages, interactive=interactive)
         cleaned = cleanup_inbox(config, interactive=interactive)
         if cleaned:
-            logger.info("Inbox cleanup removed %d message(s) from inbox", cleaned)
+            logger.info("Trashed %d inbox message(s) older than %d day(s)", cleaned, config.gmail.trash_older_than_days)
         purged = purge_old_archives(config, today=rd)
         if purged:
             logger.info("Purged %d old email archive(s)", purged)

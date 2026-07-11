@@ -10,7 +10,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from email_analyzer.config import AppConfig
-from email_analyzer.gmail.actions import apply_post_save_actions
+from email_analyzer.gmail.actions import mark_message_read
 from email_analyzer.gmail.auth import build_gmail_service
 from email_analyzer.gmail.fetch import EmailMessage, download_raw_eml
 from email_analyzer.storage.paths import emails_dir
@@ -32,19 +32,13 @@ def message_to_meta(msg: EmailMessage) -> dict:
     return data
 
 
-def _apply_gmail_post_save(
+def _mark_saved_message_read(
     config: AppConfig,
     service,
     message_id: str,
 ) -> None:
-    if not config.gmail.mark_read_after_save and not config.gmail.trash_after_save:
-        return
-    apply_post_save_actions(
-        service,
-        message_id,
-        mark_read=config.gmail.mark_read_after_save,
-        trash=config.gmail.trash_after_save,
-    )
+    if config.gmail.mark_read_after_save:
+        mark_message_read(service, message_id)
 
 
 def save_message(
@@ -70,10 +64,10 @@ def save_message(
         encoding="utf-8",
     )
 
-    if config.gmail.mark_read_after_save or config.gmail.trash_after_save:
+    if config.gmail.mark_read_after_save:
         if service is None:
             service = build_gmail_service(config, interactive=interactive)
-        _apply_gmail_post_save(config, service, msg.message_id)
+        _mark_saved_message_read(config, service, msg.message_id)
     return dest
 
 
@@ -108,10 +102,10 @@ def save_messages(
             encoding="utf-8",
         )
 
-        if config.gmail.mark_read_after_save or config.gmail.trash_after_save:
+        if config.gmail.mark_read_after_save:
             if service is None:
                 service = build_gmail_service(config, interactive=interactive)
-            _apply_gmail_post_save(config, service, msg.message_id)
+            _mark_saved_message_read(config, service, msg.message_id)
 
         saved.append(dest)
     return saved
@@ -163,6 +157,37 @@ def index_archived_message_ids(config: AppConfig) -> set[str]:
     return ids
 
 
+def _meta_to_message(data: dict) -> EmailMessage:
+    return EmailMessage(
+        message_id=data["message_id"],
+        thread_id=data.get("thread_id", ""),
+        internal_date_ms=int(data.get("internal_date_ms", 0)),
+        from_addr=data.get("from_addr", ""),
+        from_email=data.get("from_email", ""),
+        subject=data.get("subject", ""),
+        date_header=data.get("date_header", ""),
+        snippet=data.get("snippet", ""),
+        labels=data.get("labels", []),
+        body_text=data.get("body_text", ""),
+        category=data.get("category"),
+    )
+
+
+def load_archived_messages_index(config: AppConfig) -> dict[str, EmailMessage]:
+    """Map Gmail message IDs to locally archived EmailMessage objects."""
+    base = config.resolve(config.paths.emails)
+    if not base.exists():
+        return {}
+
+    index: dict[str, EmailMessage] = {}
+    for meta_file in base.rglob("*.meta.json"):
+        data = json.loads(meta_file.read_text(encoding="utf-8"))
+        message_id = data.get("message_id")
+        if message_id:
+            index[message_id] = _meta_to_message(data)
+    return index
+
+
 def load_messages_for_date(config: AppConfig, report_date: date) -> list[EmailMessage]:
     dest = emails_dir(config, report_date)
     if not dest.exists():
@@ -171,21 +196,7 @@ def load_messages_for_date(config: AppConfig, report_date: date) -> list[EmailMe
     messages: list[EmailMessage] = []
     for meta_file in sorted(dest.glob("*.meta.json")):
         data = json.loads(meta_file.read_text(encoding="utf-8"))
-        messages.append(
-            EmailMessage(
-                message_id=data["message_id"],
-                thread_id=data.get("thread_id", ""),
-                internal_date_ms=data["internal_date_ms"],
-                from_addr=data.get("from_addr", ""),
-                from_email=data.get("from_email", ""),
-                subject=data.get("subject", ""),
-                date_header=data.get("date_header", ""),
-                snippet=data.get("snippet", ""),
-                labels=data.get("labels", []),
-                body_text=data.get("body_text", ""),
-                category=data.get("category"),
-            )
-        )
+        messages.append(_meta_to_message(data))
     return messages
 
 

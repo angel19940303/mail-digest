@@ -146,9 +146,12 @@ def fetch_messages_in_window(
     *,
     interactive: bool = True,
 ) -> list[EmailMessage]:
+    from email_analyzer.storage.emails import load_archived_messages_index
+
     service = build_gmail_service(config, interactive=interactive)
     start_ms = int(window_start.timestamp() * 1000)
     end_ms = int(window_end.timestamp() * 1000)
+    archived = load_archived_messages_index(config)
 
     raw_items = list_message_ids(service, config.gmail.broad_query)
     results: list[EmailMessage] = []
@@ -164,10 +167,17 @@ def fetch_messages_in_window(
         if internal_ms < start_ms or internal_ms >= end_ms:
             continue
 
+        message_id = item["id"]
+        is_unread = "UNREAD" in meta.get("labelIds", [])
+        local_copy = archived.get(message_id)
+        if not is_unread and local_copy is not None:
+            results.append(local_copy)
+            continue
+
         detail = (
             service.users()
             .messages()
-            .get(userId="me", id=item["id"], format="full")
+            .get(userId="me", id=message_id, format="full")
             .execute()
         )
         results.append(_parse_message_list_item(item, detail))

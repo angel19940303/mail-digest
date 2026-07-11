@@ -7,7 +7,7 @@ Mail Digest helps you stay on top of email without living in your inbox. It fetc
 ## Features
 
 - **Rolling 24-hour window**: at 6:00 p.m. local time, fetches inbox mail from 6:00 p.m. yesterday → 6:00 p.m. today
-- **Local archive**: `emails/YYYY/YYYY-MM/YYYY-MM-DD/` (`.eml` + `.meta.json`); after save, Gmail messages are marked read and moved to Trash
+- **Local archive**: `emails/YYYY/YYYY-MM/YYYY-MM-DD/` (`.eml` + `.meta.json`); after save, Gmail messages are marked read; inbox mail older than 7 days is moved to Trash
 - **Rule-based classification**: AlphaSignal + TLDR (`tldrnewsletter.com`) → Newsletter; `@lists.boost.org` → Community; else Other
 - **AI reports**: Claude Code CLI or Cursor CLI (configurable)
 - **Slack**: structured Block Kit summary via webhook
@@ -76,7 +76,7 @@ ai:
   provider: cursor
 
 gmail:
-  trash_after_save: false
+  trash_older_than_days: 14
 ```
 
 Alternatively, point to a config file anywhere on disk:
@@ -97,20 +97,19 @@ python -m email_analyzer auth
 
 Opens a browser once; saves `token.json` for headless runs. The app uses the `gmail.modify` scope (read inbox, mark read, move to Trash). If you previously authenticated with read-only access, delete `token.json` and run `auth` again.
 
-Gmail cleanup after each successful local save (toggle in `config/config.yaml`):
+Gmail handling (toggle in `config/config.yaml`):
 
 ```yaml
 gmail:
-  mark_read_after_save: true
-  trash_after_save: true
+  mark_read_after_save: true       # mark read after a successful local save
+  trash_older_than_days: 7         # move inbox mail older than N days to Trash
   inbox_cleanup_enabled: true
-  inbox_cleanup_query: "in:inbox"  # archive + mark read + trash remaining inbox mail
 
 paths:
   email_retention_days: 0  # delete local archives older than N days; 0 = keep forever
 ```
 
-The daily report only fetches mail in the last 24-hour window (`broad_query` uses `newer_than:2d` as a pre-filter). Inbox cleanup runs afterward to handle older messages still sitting in Gmail.
+The daily report fetches mail in the last 24-hour window. Already-read messages with a local archive skip the Gmail full fetch and load from disk. Inbox cleanup runs afterward and trashes mail older than `trash_older_than_days`.
 
 ### 6. Run manually
 

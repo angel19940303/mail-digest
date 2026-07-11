@@ -9,7 +9,7 @@
 
 # gmail:
 #   mark_read_after_save: true
-#   trash_after_save: false
+#   trash_older_than_days: 7
 
 # paths:
 #   email_retention_days: 90
