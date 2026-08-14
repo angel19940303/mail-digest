@@ -15,7 +15,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
-from email_analyzer.config import AppConfig, GMAIL_MODIFY_SCOPE
+from email_analyzer.config import GMAIL_MODIFY_SCOPE, AppConfig
 
 logger = logging.getLogger(__name__)
 

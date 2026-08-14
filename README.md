@@ -32,7 +32,8 @@ python -m venv .venv
 # macOS/Linux
 source .venv/bin/activate
 
-pip install -e ".[dev]"
+pip install -r requirements.lock
+pip install -e . --no-deps
 ```
 
 ### 2. Google Cloud / Gmail OAuth
@@ -234,6 +235,13 @@ The `ReportNotifier` protocol in `src/email_analyzer/slack/base.py` allows swapp
 ```bash
 pytest
 ruff check src tests
+```
+
+Runtime and dev packages are pinned in `pyproject.toml`. The full tree (including transitives) is locked in `requirements.lock`. After changing a dependency version, reinstall and rewrite the lock:
+
+```bash
+pip install -e ".[dev]"
+pip freeze | grep -vE '^(mail-digest==|-e )' > requirements.lock
 ```
 
 ## Troubleshooting

@@ -60,9 +60,11 @@ def test_combine_strips_model_title_via_generate(tmp_path):
 
     def fake_run_prompt(_config, user_input, *, system_prompt_file=None, mode="report"):
         return (
-            "# Daily Email Report — 2026-06-11\n\n"
-            "## Newsletter\n\n"
-            "### New tools\n- Tool A\n",
+            (
+                "# Daily Email Report — 2026-06-11\n\n"
+                "## Newsletter\n\n"
+                "### New tools\n- Tool A\n"
+            ),
             "",
             0,
         )

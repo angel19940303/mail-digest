@@ -1,6 +1,15 @@
 import pytest
 
-from email_analyzer.config import AIConfig, AppConfig, OpenRouterConfig, PathsConfig, ScheduleConfig, SenderRules, SlackConfig, GmailConfig
+from email_analyzer.config import (
+    AIConfig,
+    AppConfig,
+    GmailConfig,
+    OpenRouterConfig,
+    PathsConfig,
+    ScheduleConfig,
+    SenderRules,
+    SlackConfig,
+)
 from email_analyzer.reports.ai_cli import claude_subprocess_env, prompt_file_for_mode
 
 

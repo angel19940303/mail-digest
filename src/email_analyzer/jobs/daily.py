@@ -18,7 +18,7 @@ from email_analyzer.reports.generator import (
 )
 from email_analyzer.slack.webhook import get_notifier, summary_from_markdown
 from email_analyzer.storage.emails import purge_old_archives, save_messages
-from email_analyzer.storage.paths import compute_window, report_date_parts
+from email_analyzer.storage.paths import compute_window, local_tz, report_date_parts
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ def run_job(
 def setup_logging(config: AppConfig) -> None:
     log_dir = config.resolve("logs")
     log_dir.mkdir(parents=True, exist_ok=True)
-    log_file = log_dir / f"{datetime.now().date().isoformat()}.log"
+    log_file = log_dir / f"{datetime.now(tz=local_tz()).date().isoformat()}.log"
 
     logging.basicConfig(
         level=logging.INFO,

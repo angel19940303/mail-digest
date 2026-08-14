@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -10,7 +10,7 @@ from email_analyzer.config import AppConfig
 
 
 def local_tz() -> ZoneInfo:
-    return datetime.now().astimezone().tzinfo  # type: ignore[return-value]
+    return datetime.now(tz=UTC).astimezone().tzinfo  # type: ignore[return-value]
 
 
 def report_date_parts(d: date) -> tuple[str, str, str]:

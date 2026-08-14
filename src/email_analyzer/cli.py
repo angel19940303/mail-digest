@@ -5,9 +5,9 @@ from __future__ import annotations
 import argparse
 from datetime import date
 
+from email_analyzer.classify.rules import classify_messages, reclassify_archived
 from email_analyzer.config import load_config
 from email_analyzer.gmail.auth import _run_browser_login
-from email_analyzer.classify.rules import classify_messages, reclassify_archived
 from email_analyzer.jobs.daily import run_job, setup_logging
 from email_analyzer.reports.generator import generate_daily_report
 from email_analyzer.storage.emails import iter_archived_dates, load_messages_for_date

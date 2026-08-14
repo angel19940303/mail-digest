@@ -29,6 +29,7 @@ def _run_subprocess(cmd: list[str], **kwargs) -> subprocess.CompletedProcess[str
         encoding=_SUBPROCESS_ENCODING,
         errors="replace",
         env=env,
+        check=False,
         **kwargs,
     )
 
