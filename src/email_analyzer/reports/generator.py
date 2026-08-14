@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import re
 from datetime import date, timedelta
 from pathlib import Path
 
+from email_analyzer.classify.rules import CATEGORIES, group_messages_by_category
 from email_analyzer.config import AppConfig
 from email_analyzer.gmail.fetch import EmailMessage
 from email_analyzer.reports.ai_cli import prompt_file_for_mode, run_prompt
@@ -16,47 +18,56 @@ from email_analyzer.storage.paths import (
     weekly_report_path,
 )
 
-NO_EMAILS_REPORT = """# Daily Email Report — {date}
-
-> **Emails analyzed**: 0 total (newsletter: 0, community: 0, other: 0)
-
-## Newsletter
-
-### New tools
+NEWSLETTER_STUB = """### New tools
 _None_
 
 ### Improvements / trends
-_None_
+_None_"""
 
-## Community
-
-### Highlights
+COMMUNITY_STUB = """### Highlights
 _No community emails in this window._
 
 ### Notable threads / announcements
-_None_
+_None_"""
 
-## Other
-
-### Summary
+OTHER_STUB = """### Summary
 No emails were received in this reporting window.
 
 ### Notable emails
 _None_
 
 ### Action items
+_None_"""
+
+OTHER_EMPTY_STUB = """### Summary
+_No other emails in this window._
+
+### Notable emails
 _None_
-"""
 
+### Action items
+_None_"""
 
+CATEGORY_STUBS = {
+    "newsletter": NEWSLETTER_STUB,
+    "community": COMMUNITY_STUB,
+    "other": OTHER_STUB,
+}
 
-
+_H2_CATEGORY = re.compile(r"^##\s+(Newsletter|Community|Other)\s*$", re.IGNORECASE)
+_H1_TITLE = re.compile(r"^#\s+")
+_EXPECTED_HEADINGS = {
+    "newsletter": ("### New tools", "### Improvements / trends"),
+    "community": ("### Highlights", "### Notable threads / announcements"),
+    "other": ("### Summary", "### Notable emails", "### Action items"),
+}
 
 
 def _truncate_body(text: str, max_chars: int) -> str:
     if len(text) <= max_chars:
         return text
     return text[: max_chars - 3] + "..."
+
 
 def _format_email_block(msg: EmailMessage, max_body: int) -> str:
     raw = msg.body_text or msg.snippet or ""
@@ -74,37 +85,25 @@ def _format_email_block(msg: EmailMessage, max_body: int) -> str:
     )
 
 
-def build_daily_input(config: AppConfig, messages: list[EmailMessage], report_date: date) -> str:
+def build_category_input(
+    config: AppConfig,
+    messages: list[EmailMessage],
+    report_date: date,
+    category: str,
+) -> str:
     _, _, yyyymmdd = report_date_parts(report_date)
     max_body = config.ai.max_body_chars_per_email
-    by_cat: dict[str, list[EmailMessage]] = {
-        "newsletter": [],
-        "community": [],
-        "other": [],
-    }
-    for msg in messages:
-        cat = msg.category or "other"
-        by_cat.setdefault(cat, []).append(msg)
-
     lines = [
         f"Report date: {yyyymmdd}",
-        f"Total emails: {len(messages)}",
-        f"Counts: newsletter={len(by_cat['newsletter'])}, "
-        f"community={len(by_cat['community'])}, other={len(by_cat['other'])}",
+        f"Category: {category}",
+        f"Email count: {len(messages)}",
         "",
-        "Write a RICH detailed report for archival. Include specifics from each email below.",
+        "Write a RICH detailed section for archival. Use only the emails below.",
         "",
     ]
-    for cat in ("newsletter", "community", "other"):
-        lines.append(f"### {cat.title()} ({len(by_cat.get(cat, []))})")
-        for msg in by_cat.get(cat, []):
-            lines.append(_format_email_block(msg, max_body))
-        lines.append("")
+    for msg in messages:
+        lines.append(_format_email_block(msg, max_body))
     return "\n".join(lines)
-
-
-
-
 
 
 def _strip_fences(text: str) -> str:
@@ -118,6 +117,27 @@ def _strip_fences(text: str) -> str:
         return "\n".join(lines).strip()
     return t
 
+
+def _normalize_section_output(text: str, category: str) -> str:
+    """Strip titles/H2 wrappers so Python owns the report structure."""
+    text = _strip_fences(text)
+    lines = text.splitlines()
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    if lines and _H1_TITLE.match(lines[0].lstrip()):
+        lines.pop(0)
+        while lines and not lines[0].strip():
+            lines.pop(0)
+    lines = [ln for ln in lines if not _H2_CATEGORY.match(ln.strip())]
+    body = "\n".join(lines).strip()
+    expected = _EXPECTED_HEADINGS.get(category, ())
+    if body and expected:
+        lowered = body.lower()
+        if not any(heading.lower() in lowered for heading in expected):
+            body = f"{expected[0]}\n{body}"
+    return body
+
+
 def _check_ai_output(stdout: str | None, stderr: str | None, code: int, label: str) -> str:
     out = stdout or ""
     if code != 0 or not out.strip():
@@ -126,32 +146,68 @@ def _check_ai_output(stdout: str | None, stderr: str | None, code: int, label: s
     return out
 
 
+def summarize_category(
+    config: AppConfig,
+    messages: list[EmailMessage],
+    report_date: date,
+    category: str,
+    *,
+    empty_stub: str | None = None,
+) -> str:
+    if not messages:
+        return empty_stub if empty_stub is not None else CATEGORY_STUBS[category]
+    user_input = build_category_input(config, messages, report_date, category)
+    stdout, stderr, code = run_prompt(
+        config,
+        user_input,
+        system_prompt_file=prompt_file_for_mode(config, category),
+        mode=category,
+    )
+    stdout = _check_ai_output(stdout, stderr, code, f"{category.title()} section generation")
+    return _normalize_section_output(stdout, category)
+
+
+def combine_daily_report(
+    report_date: date,
+    counts: dict[str, int],
+    sections: dict[str, str],
+) -> str:
+    _, _, yyyymmdd = report_date_parts(report_date)
+    newsletter = counts.get("newsletter", 0)
+    community = counts.get("community", 0)
+    other = counts.get("other", 0)
+    total = newsletter + community + other
+    return (
+        f"# Daily Email Report — {yyyymmdd}\n\n"
+        f"> **Emails analyzed**: {total} total "
+        f"(newsletter: {newsletter}, community: {community}, other: {other})\n\n"
+        f"## Newsletter\n{sections['newsletter'].strip()}\n\n"
+        f"## Community\n{sections['community'].strip()}\n\n"
+        f"## Other\n{sections['other'].strip()}\n"
+    )
+
+
 def generate_daily_report(
     config: AppConfig,
     messages: list[EmailMessage],
     report_date: date,
 ) -> tuple[str, Path]:
-    _, _, yyyymmdd = report_date_parts(report_date)
     out_path = daily_report_path(config, report_date)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    if not messages:
-        content = NO_EMAILS_REPORT.format(date=yyyymmdd)
-        out_path.write_text(content, encoding="utf-8")
-        return content, out_path
-
-    user_input = build_daily_input(config, messages, report_date)
-    stdout, stderr, code = run_prompt(
-        config,
-        user_input,
-        system_prompt_file=prompt_file_for_mode(config, "daily"),
-        mode="report",
-    )
-    stdout = _check_ai_output(stdout, stderr, code, "Daily report generation")
-
-    content = _strip_fences(stdout)
-    if not content.startswith("#"):
-        content = f"# Daily Email Report — {yyyymmdd}\n\n{content}"
+    by_cat = group_messages_by_category(messages)
+    counts = {cat: len(by_cat.get(cat, [])) for cat in CATEGORIES}
+    sections = {
+        cat: summarize_category(
+            config,
+            by_cat.get(cat, []),
+            report_date,
+            cat,
+            empty_stub=OTHER_EMPTY_STUB if cat == "other" and messages else None,
+        )
+        for cat in CATEGORIES
+    }
+    content = combine_daily_report(report_date, counts, sections)
     out_path.write_text(content, encoding="utf-8")
     return content, out_path
 

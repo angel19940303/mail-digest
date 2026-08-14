@@ -6,7 +6,7 @@ import logging
 import sys
 from datetime import date, datetime
 
-from email_analyzer.classify.hybrid import classify_messages
+from email_analyzer.classify.rules import classify_messages
 from email_analyzer.config import AppConfig, load_config
 from email_analyzer.gmail.fetch import fetch_messages_in_window
 from email_analyzer.gmail.inbox_cleanup import cleanup_inbox

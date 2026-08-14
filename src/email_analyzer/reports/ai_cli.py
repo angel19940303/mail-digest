@@ -75,7 +75,7 @@ def run_prompt(
     """
     Run configured AI CLI and return (stdout, stderr, exit_code).
 
-    mode: report | classify | weekly | monthly
+    mode: newsletter | community | other | weekly | monthly
     """
     provider = config.ai.provider.lower()
     timeout = config.ai.timeout_seconds
@@ -179,10 +179,13 @@ def _run_cursor(
 
 def prompt_file_for_mode(config: AppConfig, mode: str) -> Path:
     mapping = {
-        "report": "daily_report.md",
-        "daily": "daily_report.md",
+        "newsletter": "newsletter_section.md",
+        "community": "community_section.md",
+        "other": "other_section.md",
         "weekly": "weekly_report.md",
         "monthly": "monthly_report.md",
     }
-    name = mapping.get(mode, "daily_report.md")
+    name = mapping.get(mode)
+    if name is None:
+        raise ValueError(f"Unknown prompt mode: {mode}")
     return prompts_dir(config) / name

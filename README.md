@@ -8,8 +8,8 @@ Mail Digest helps you stay on top of email without living in your inbox. It fetc
 
 - **Rolling 24-hour window**: at 6:00 p.m. local time, fetches inbox mail from 6:00 p.m. yesterday → 6:00 p.m. today
 - **Local archive**: `emails/YYYY/YYYY-MM/YYYY-MM-DD/` (`.eml` + `.meta.json`); after save, Gmail messages are marked read; inbox mail older than 7 days is moved to Trash
-- **Rule-based classification**: AlphaSignal + TLDR (`tldrnewsletter.com`) → Newsletter; `@lists.boost.org` → Community; else Other
-- **AI reports**: Claude Code CLI or Cursor CLI (configurable)
+- **Rule-based classification**: YAML sender rules first (AlphaSignal, TLDR, Boost lists), then mailing-list headers / Gmail forum labels; unmatched mail is Other. Add personal senders in `config/sender_rules.local.yaml`.
+- **AI reports**: one summary per class (newsletter, community, other), then Python combines them into the daily Markdown file
 - **Slack**: structured Block Kit summary via webhook
 - **Aggregates**: weekly report on Sundays, monthly report on the last day of each month
 
@@ -161,7 +161,11 @@ powershell -File .\scripts\run_daily.ps1
 
 ## Report format
 
-Daily reports are **rich Markdown archives** with subsections, context, and per-item detail. Slack still receives a short block summary only — the full report stays on disk.
+Daily reports are built in three steps:
+
+1. **Python classify** each email (`newsletter` / `community` / `other`) using sender rules, then mailing-list headers (`List-Id`, `List-Unsubscribe`, `Precedence: list`) and Gmail `CATEGORY_FORUMS`. Gmail Promotions is not auto-mapped.
+2. **AI summarize** each non-empty class in isolation (empty classes get a stub, no AI call).
+3. **Python combine** the three sections into one Markdown file. The model does not reclassify or rewrite the full document.
 
 Daily reports use three sections:
 
@@ -170,6 +174,8 @@ Daily reports use three sections:
 - **Other** — summary and action items
 
 Slack receives a block summary per section; the full Markdown report stays on disk.
+
+To treat more senders as newsletters or community mail, add them to `config/sender_rules.local.yaml` and run `python -m email_analyzer reclassify --all` (then `regenerate --date` for reports).
 
 ## AI providers
 

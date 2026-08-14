@@ -174,6 +174,9 @@ def _meta_to_message(data: dict) -> EmailMessage:
         labels=data.get("labels", []),
         body_text=data.get("body_text", ""),
         category=data.get("category"),
+        list_id=data.get("list_id", ""),
+        list_unsubscribe=data.get("list_unsubscribe", ""),
+        precedence=data.get("precedence", ""),
     )
 
 
