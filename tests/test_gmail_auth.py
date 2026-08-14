@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from google.auth.exceptions import RefreshError
 
-from email_analyzer.config import AppConfig, GmailConfig, GMAIL_MODIFY_SCOPE
+from email_analyzer.config import GMAIL_MODIFY_SCOPE, AppConfig, GmailConfig
 from email_analyzer.gmail.auth import (
     CHROME_BROWSER_NAME,
     _register_chrome_browser,

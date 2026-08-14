@@ -25,7 +25,7 @@ def _strip_markdown(text: str) -> str:
 def _normalize_bullet_line(line: str) -> str | None:
     """Turn a markdown bullet line into plain text for Slack, or skip."""
     stripped = line.strip()
-    if not (stripped.startswith("- ") or stripped.startswith("* ")):
+    if not stripped.startswith(("- ", "* ")):
         return None
 
     item = _strip_markdown(stripped[2:].strip())

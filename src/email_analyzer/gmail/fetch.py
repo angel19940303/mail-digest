@@ -29,6 +29,9 @@ class EmailMessage:
     labels: list[str] = field(default_factory=list)
     body_text: str = ""
     category: str | None = None
+    list_id: str = ""
+    list_unsubscribe: str = ""
+    precedence: str = ""
 
     @property
     def internal_datetime(self) -> datetime:
@@ -121,6 +124,9 @@ def _parse_message_list_item(item: dict[str, Any], detail: dict[str, Any]) -> Em
         snippet=snippet,
         labels=detail.get("labelIds", []),
         body_text=body,
+        list_id=_header_value(headers, "List-Id"),
+        list_unsubscribe=_header_value(headers, "List-Unsubscribe"),
+        precedence=_header_value(headers, "Precedence"),
     )
 
 

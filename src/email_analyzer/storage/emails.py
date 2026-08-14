@@ -6,14 +6,14 @@ import json
 import logging
 import shutil
 from dataclasses import asdict
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from email_analyzer.config import AppConfig
 from email_analyzer.gmail.actions import mark_message_read
 from email_analyzer.gmail.auth import build_gmail_service
 from email_analyzer.gmail.fetch import EmailMessage, download_raw_eml
-from email_analyzer.storage.paths import emails_dir
+from email_analyzer.storage.paths import emails_dir, local_tz
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +117,7 @@ def purge_old_archives(config: AppConfig, *, today: date | None = None) -> int:
     if retention <= 0:
         return 0
 
-    cutoff = (today or date.today()) - timedelta(days=retention)
+    cutoff = (today or datetime.now(tz=local_tz()).date()) - timedelta(days=retention)
     base = config.resolve(config.paths.emails)
     if not base.exists():
         return 0
@@ -174,6 +174,9 @@ def _meta_to_message(data: dict) -> EmailMessage:
         labels=data.get("labels", []),
         body_text=data.get("body_text", ""),
         category=data.get("category"),
+        list_id=data.get("list_id", ""),
+        list_unsubscribe=data.get("list_unsubscribe", ""),
+        precedence=data.get("precedence", ""),
     )
 
 

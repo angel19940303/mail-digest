@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
 from email_analyzer.config import AppConfig, GmailConfig, PathsConfig, ScheduleConfig
@@ -59,8 +59,8 @@ def _write_archive(tmp_path, message_id: str, *, internal_date_ms: int) -> Email
 @patch("email_analyzer.gmail.fetch.list_message_ids")
 def test_fetch_uses_local_archive_when_message_is_read(mock_list, mock_build_service, tmp_path):
     config = _config(tmp_path)
-    window_start = datetime(2026, 6, 18, 18, 0, tzinfo=timezone.utc)
-    window_end = datetime(2026, 6, 19, 18, 0, tzinfo=timezone.utc)
+    window_start = datetime(2026, 6, 18, 18, 0, tzinfo=UTC)
+    window_end = datetime(2026, 6, 19, 18, 0, tzinfo=UTC)
     internal_ms = int((window_start.timestamp() + 3600) * 1000)
     cached = _write_archive(tmp_path, "cached1", internal_date_ms=internal_ms)
 
@@ -92,8 +92,8 @@ def test_fetch_uses_local_archive_when_message_is_read(mock_list, mock_build_ser
 @patch("email_analyzer.gmail.fetch.list_message_ids")
 def test_fetch_downloads_unread_message_even_if_archived(mock_list, mock_build_service, tmp_path):
     config = _config(tmp_path)
-    window_start = datetime(2026, 6, 18, 18, 0, tzinfo=timezone.utc)
-    window_end = datetime(2026, 6, 19, 18, 0, tzinfo=timezone.utc)
+    window_start = datetime(2026, 6, 18, 18, 0, tzinfo=UTC)
+    window_end = datetime(2026, 6, 19, 18, 0, tzinfo=UTC)
     internal_ms = int((window_start.timestamp() + 3600) * 1000)
     cached = _write_archive(tmp_path, "cached1", internal_date_ms=internal_ms)
 

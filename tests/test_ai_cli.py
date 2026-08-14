@@ -1,5 +1,16 @@
-from email_analyzer.config import AIConfig, AppConfig, OpenRouterConfig, PathsConfig, ScheduleConfig, SenderRules, SlackConfig, GmailConfig
-from email_analyzer.reports.ai_cli import claude_subprocess_env
+import pytest
+
+from email_analyzer.config import (
+    AIConfig,
+    AppConfig,
+    GmailConfig,
+    OpenRouterConfig,
+    PathsConfig,
+    ScheduleConfig,
+    SenderRules,
+    SlackConfig,
+)
+from email_analyzer.reports.ai_cli import claude_subprocess_env, prompt_file_for_mode
 
 
 def _config(openrouter: OpenRouterConfig) -> AppConfig:
@@ -61,3 +72,17 @@ def test_openrouter_disabled_passthrough(monkeypatch):
     config = _config(OpenRouterConfig(enabled=False))
     env = claude_subprocess_env(config)
     assert env["ANTHROPIC_API_KEY"] == "native-key"
+
+
+def test_prompt_file_for_mode_sections():
+    config = _config(OpenRouterConfig(enabled=False))
+    assert prompt_file_for_mode(config, "newsletter").name == "newsletter_section.md"
+    assert prompt_file_for_mode(config, "community").name == "community_section.md"
+    assert prompt_file_for_mode(config, "other").name == "other_section.md"
+    assert prompt_file_for_mode(config, "weekly").name == "weekly_report.md"
+
+
+def test_prompt_file_for_mode_unknown():
+    config = _config(OpenRouterConfig(enabled=False))
+    with pytest.raises(ValueError, match="Unknown prompt mode"):
+        prompt_file_for_mode(config, "classify")
